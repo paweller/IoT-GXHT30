@@ -104,7 +104,7 @@ void loop() {
 }
 ```
 \
-Continuous data acquisition modes
+Periodic data acquisition modes
 ```c
 #include "gxht30.h"
 
