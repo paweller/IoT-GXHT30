@@ -83,7 +83,7 @@ INVALID_DATA
 <Wire.h>
 ```
 
-## Dummy code example
+## Dummy code examples
 Single-shot data acquisition modes
 ```c
 #include "gxht30.h"
@@ -122,6 +122,22 @@ void loop() {
     uint16_t* data = gxht30.get_temp_and_rh(CONVERSION_TRUE);
     uint8_t temperature = (&data[1]);
     uint8_t relative_humidity = (&data[0]);
+}
+```
+\
+Controllinge the heater
+```c
+#include "gxht30.h"
+
+GXHT30 gxht30;
+// GXHT30 gxht30(GXHT30_ADDRESS_ALTERED);
+
+void setup() {}
+
+void loop() {
+    uint8_t tx_status = gxht30.request_to_gxht30(GXHT30_HEATER_ENABLE);
+    delay(2000);
+    tx_status = gxht30.request_to_gxht30(GXHT30_HEATER_DISABLE);
 }
 ```
 \
