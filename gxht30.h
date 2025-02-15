@@ -60,13 +60,13 @@
 #define GXHT30_STRG_CHEKSUM 0x1
 
 // Data conversion
-#define CONVERSION_FALSE 0x00
-#define CONVERSION_TRUE 0x01
-#define INVALID_DATA 0xFFFF
+#define GXHT30_CONVERSION_FALSE 0x00
+#define GXHT30_CONVERSION_TRUE 0x01
+#define GXHT30_INVALID_DATA 0xFFFF
 
 // Private defines
-#define LSB 0
-#define MSB 1
+#define GXHT30_LSB 0
+#define GXHT30_MSB 1
 
 class GXHT30 {
     public:
@@ -109,7 +109,7 @@ class GXHT30 {
 
         // Function declarations
         uint8_t split_request(
-            uint16_t req,
+            uint16_t* req,
             uint8_t significance
         );
         uint8_t check_crc(
@@ -122,7 +122,7 @@ class GXHT30 {
             uint8_t data_length,
             uint8_t data_validity
         );
-        uint8_t transmit_request(uint16_t req);
+        uint8_t transmit_request(uint16_t* req);
         void convert_temp(uint8_t* data);
         void convert_rh(uint8_t* data);
         void convert_temp_and_rh(uint8_t* data);
