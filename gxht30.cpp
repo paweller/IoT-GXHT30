@@ -5,14 +5,14 @@ GXHT30::GXHT30(uint8_t gxht30_address)
     : sensor_address(gxht30_address) {}
 
 uint8_t GXHT30::split_request(
-    uint16_t req,
+    uint16_t* req,
     uint8_t significance
 ) {
     uint8_t split;
     if(!significance) {
-        split = (uint8_t)(req & 0xFF);
+        split = (uint8_t)(*req & 0xFF);
     } else {
-        split = (uint8_t)((req >> 8) & 0xFF);
+        split = (uint8_t)((*req >> 8) & 0xFF);
     }
     return split;
 }
@@ -86,11 +86,11 @@ void GXHT30::mark_invalid_data(
 }
 
 uint8_t GXHT30::transmit_request(
-    uint16_t req
+    uint16_t* req
 ) {
     Wire.beginTransmission(sensor_address);
-    Wire.write(split_request(req, MSB));
-    Wire.write(split_request(req, LSB));
+    Wire.write(split_request(req, GXHT30_MSB));
+    Wire.write(split_request(req, GXHT30_LSB));
     uint8_t tx_status = Wire.endTransmission(1);
     return tx_status;
 };
@@ -99,7 +99,7 @@ uint8_t GXHT30::request_to_gxht30(
     uint16_t request
 ) {
     uint8_t tx_status = 4;
-    uint8_t req_msb = split_request(request, MSB);
+    uint8_t req_msb = split_request(&request, GXHT30_MSB);
     uint8_t cams = (
         req_msb == 0x20 || req_msb == 0x21 || req_msb == 0x22 ||
         req_msb == 0x23 || req_msb == 0x27 || req_msb == 0x2B
@@ -108,25 +108,26 @@ uint8_t GXHT30::request_to_gxht30(
         last_continuous_dacqm = request;
         is_continuous_dacqm = 1;
         is_clk_stretching = 0;
-        tx_status = transmit_request(request);
+        tx_status = transmit_request(&request);
     } else if (
         is_continuous_dacqm && !cams && (request != GXHT30_FETCH_DATA)
     ) {
-        tx_status = transmit_request(GXHT30_PAM_STOP);
+        uint16_t trash_req = GXHT30_PAM_STOP;
+        tx_status = transmit_request(&trash_req);
         if(!tx_status) {
             uint32_t millis_old = millis();
-            set_clk_stretching(split_request(request, MSB));
+            set_clk_stretching(split_request(&request, GXHT30_MSB));
             while((millis_old - millis()) < 16) {
                 __asm("nop");
             }
-            transmit_request(request);
+            transmit_request(&request);
             if(
                 (request == GXHT30_HEATER_ENABLE) ||
                 (request == GXHT30_HEATER_DISABLE) ||
                 (request == GXHT30_STRG_READ) ||
                 (request == GXHT30_STRG_CLEAR)
             ) {
-                transmit_request(last_continuous_dacqm);
+                transmit_request(&last_continuous_dacqm);
             } else {
                 is_continuous_dacqm = 0;
             }
@@ -135,8 +136,8 @@ uint8_t GXHT30::request_to_gxht30(
         if(cams) {
             last_continuous_dacqm = request;
         }
-        set_clk_stretching(split_request(request, MSB));
-        tx_status = transmit_request(request);
+        set_clk_stretching(split_request(&request, GXHT30_MSB));
+        tx_status = transmit_request(&request);
     }
     // For return values refer to https://docs.arduino.cc/language-reference/en/functions/communication/wire/endTransmission/
     // 0: success
@@ -152,7 +153,7 @@ void GXHT30::convert_temp(
     uint8_t* data
 ) {
     uint16_t raw = (uint16_t)((data[5] << 8) | data[4]);
-    if(raw != INVALID_DATA) { 
+    if(raw != GXHT30_INVALID_DATA) { 
         temp_rh[1] = 175*raw/65535-45;
     } else {
         temp_rh[1] = raw;
@@ -163,7 +164,7 @@ void GXHT30::convert_rh(
     uint8_t* data
 ) {
     uint16_t raw = (uint16_t)((data[2] << 8) | data[1]);
-    if(raw != INVALID_DATA) {
+    if(raw != GXHT30_INVALID_DATA) {
         temp_rh[0] = 100*raw/65535;
     } else {
         temp_rh[0] = raw;
@@ -182,7 +183,7 @@ uint16_t* GXHT30::get_temp_and_rh(
 ) {
     uint8_t data[6];
     for(uint8_t i = 0; i < 6; i++) {
-        data[i] = (uint8_t)((INVALID_DATA >> 8) & 0xFF);
+        data[i] = (uint8_t)((GXHT30_INVALID_DATA >> 8) & 0xFF);
     }
     if(is_clk_stretching != 0xFF) {
         if(is_clk_stretching) {
@@ -223,7 +224,7 @@ uint16_t GXHT30::request_status_register(
 ) {
     uint8_t data[3];
     for(uint8_t i = 0; i < 3; i++) {
-        data[i] = (uint8_t)((INVALID_DATA >> 8) & 0xFF);
+        data[i] = (uint8_t)((GXHT30_INVALID_DATA >> 8) & 0xFF);
     }
     uint8_t tx_status = request_to_gxht30(request);
     if(!tx_status && (request == GXHT30_STRG_READ)) {
