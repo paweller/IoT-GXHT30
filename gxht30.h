@@ -85,8 +85,8 @@ class GXHT30 {
         // Variable declarations
         uint8_t is_continuous_dacqm = 0;
         uint8_t is_clk_stretching = 0;
-        uint16_t last_continuous_dacqm;
-        uint16_t temp_rh[2];
+        uint16_t last_continuous_dacqm = 0;
+        uint16_t temp_rh[2] = {GXHT30_INVALID_DATA, GXHT30_INVALID_DATA};
         // 8-bit CRC LUT (polynomial 0x31)
         const uint8_t crc8x_lut[256] = {
         0x00,0x31,0x62,0x53,0xC4,0xF5,0xA6,0x97,0xB9,0x88,0xDB,0xEA,0x7D,0x4C,0x1F,0x2E,
